@@ -46,9 +46,9 @@ countries <- c(
 
 for (i in seq_along(dates_to_fit)) {
     
-    # if (file.exists(here("Past Models", "Models", str_c("Model_", dates_to_fit[i], ".rds")))) {
-    #     next
-    # }
+    if (file.exists(here("Past Models", "Models", str_c("Model_", dates_to_fit[i], ".rds")))) {
+        next
+    }
     
     writeLines(str_c("\n",
                      "Fitting model for: ", 
