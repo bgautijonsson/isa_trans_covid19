@@ -1,1 +1,1 @@
-# isa_trans_covid19
+This github repo is a companion to the article *A hierarchical Bayesian implementation of a novel inverted generalized logistic growth curve for predicting diagnosed COVID-19 cases in 68 countries.*
