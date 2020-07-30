@@ -8,8 +8,10 @@ library(here)
 
 options(mc.cores = parallel::detectCores())
 parallel:::setDefaultClusterOptions(setup_strategy = "sequential")
+# This function makes the data for the model training
 source("Make_Stan_Data.R")
 
+# Choose to which dates you want to fit the model
 dates_to_fit <- c(ymd(c(
     "2020-04-01",
     "2020-05-01",
@@ -18,6 +20,7 @@ dates_to_fit <- c(ymd(c(
     "2020-07-28"
 )))
 
+# Choose to which countries you want to fit the model
 countries <- c(
     "Afghanistan", "Algeria", "Argentina", "Armenia", "Austria", "Azerbaijan",
     "Bahrain", "Bangladesh", "Belarus", "Belgium", "Bolivia", "Brazil",
@@ -74,6 +77,7 @@ for (i in seq_along(dates_to_fit)) {
                       location = location,
                       population = population)
     
+    # For dates before July 1 we use a non-centered parametrization
     if (dates_to_fit[i] < ymd("2020-07-01")) {
         model_file <- "Stan/Hierarchical_InvGenLogistic_NegBin_Gompertz_MVNonCentered.stan"
     } else {

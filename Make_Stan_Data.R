@@ -23,7 +23,8 @@ Make_Stan_Data <- function(min_case_rate = 0.02,
         new_tests = col_number(),
         tests_units = col_character()
     )
-    
+    # We read in the data from Our World In Data
+    # Their data on COVID-19 cases come from the ECDC.
     d <- read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv",
                   col_types = col_types) %>%
         select(country = location, location = location, continent, 
@@ -49,9 +50,10 @@ Make_Stan_Data <- function(min_case_rate = 0.02,
         filter(n() >= min_days) %>% 
         ungroup 
     
+    # The optional argument countries can be used to prepare data for only selected countries
     if (!is.null(countries)) d <- d %>% filter(country %in% countries)
     
-    
+    # Fit GAMs to data from each country to determine empirically when first wave ends
     if(only_first_wave) {
         stop_time <- d %>% 
             group_by(location) %>% 
