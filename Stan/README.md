@@ -1,0 +1,1 @@
+The two `.Stan` files correspond to centered and non-centered versions of the same model. For more information on non-centered parametrizations in hierarchica models and their connections to Stan we refer to the excellent paper by [Betancourt and Girolami (2013)](https://arxiv.org/abs/1312.0906). 
