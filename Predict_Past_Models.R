@@ -34,7 +34,8 @@ for (i in seq_along(fitted_dates)) {
                         beta[location_id], 
                         S[location_id],
                         phi[location_id],
-                        nu[location_id], n = 2000) %>% 
+                        nu[location_id], 
+                        n = 1000) %>% 
         ungroup %>% 
         select(-.chain, .iteration, .draw) %>% 
         group_by(location_id) %>% 

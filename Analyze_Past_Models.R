@@ -1,7 +1,11 @@
 library(here)
-library(tidyverse); library(knitr); library(kableExtra); 
-library(broom); library(cowplot); 
-library(rstan); library(tidybayes); library(scales); library(lubridate)
+library(tidyverse)
+library(broom)
+library(cowplot)
+library(rstan)
+library(tidybayes)
+library(scales)
+library(lubridate)
 library(plotly)
 
 theme_set(theme_classic(base_size = 12) + 
@@ -10,7 +14,7 @@ theme_set(theme_classic(base_size = 12) +
 
 fitted_dates <- here("Past Models", "Models") %>% 
     list.files %>% 
-    str_match("_(2020-[0-9]{2}-[0152]{2})\\.rds") %>% 
+    str_match("_(2020-[0-9]{2}-[0-9]{2})\\.rds") %>% 
     .[, 2] %>% 
     na.omit %>% 
     ymd
