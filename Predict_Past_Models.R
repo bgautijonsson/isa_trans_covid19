@@ -5,7 +5,7 @@ library(tidybayes)
 
 fitted_dates <- here("Past Models", "Models") %>% 
     list.files %>% 
-    str_match("_(2020-[0-9]{2}-[0125]{2})\\.rds") %>% 
+    str_match("_(2020-[0-9]{2}-[0-9]{2})\\.rds") %>% 
     .[, 2] %>% 
     na.omit %>% 
     ymd
