@@ -1,0 +1,1 @@
+This folder will contain `.csv` versions of model predictions.

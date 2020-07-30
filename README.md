@@ -1,4 +1,4 @@
-This github repo is a companion to the article *A hierarchical Bayesian implementation of a novel inverted generalized logistic growth curve for predicting diagnosed COVID-19 cases in 68 countries.*
+This github repo is a companion to the article *A hierarchical Bayesian implementation of a novel inverted generalized logistic growth curve for predicting diagnosed COVID-19 cases in 68 countries* currently under review for publishing at ISA Transactions.
 
 ---
 

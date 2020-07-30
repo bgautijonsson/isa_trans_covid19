@@ -1,0 +1,1 @@
+This folder will contain `.Rds` binary versions of fitted models.

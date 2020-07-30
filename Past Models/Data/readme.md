@@ -1,0 +1,1 @@
+This folder will contain data used for model fitting.
