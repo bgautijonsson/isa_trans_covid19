@@ -42,14 +42,6 @@ locations <- d %>%
 n_locations <- max(d$location_id)
 ```
 
-
-```{r, include = F, eval = F}
-# library(shinystan)
-# stan_obj <- launch_shinystan(m)
-# deploy_shinystan(stan_obj, appName = "LogisticGrowthCurves", account = "bgautijonsson")
-# locations
-```
-
 ```{r}
 results <- tidyMCMC(m, conf.int = T, rhat = T, ess = T, 
                     estimate.method = "median", conf.method = "quantile") %>% 
@@ -65,7 +57,6 @@ p <- d %>%
   group_by(country, location) %>% 
   summarise(start_date = min(date),
             stop_date = max(date)) %>% 
-  filter(country != "United States") %>% 
   ungroup %>% 
   mutate(location = fct_reorder(location, yday(stop_date) * 1000 + yday(start_date)),
          stop_date2 = na_if(stop_date, max(stop_date)),
@@ -120,7 +111,6 @@ plot_dat <- results %>%
 p <- plot_dat %>% 
   filter(par == "Alpha") %>% 
   mutate(location = fct_reorder(location, estimate)) %>% 
-  filter(country != "United States") %>% 
   ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
              text = str_c("Location: ", location, "<br>",
                           "Median: ", round(estimate, 4), "<br>",
@@ -141,7 +131,6 @@ ggplotly(p, tooltip = "text")
 plot_dat %>% 
   filter(par == "Alpha") %>% 
   mutate(location = fct_reorder(location, estimate)) %>% 
-  filter(country != "United States") %>% 
   ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
              text = str_c("Location: ", location, "<br>",
                           "Median: ", round(estimate, 4), "<br>",
@@ -216,17 +205,16 @@ results %>%
 
 ## Beta
 
-```{r beta_tilde_WORLD}
+```{r beta_WORLD}
 plot_dat <- results %>% 
   ungroup %>% 
   filter(par %in% c("beta")) %>% 
-  mutate(par = str_replace(par, "phi_inv", "phi")) %>% 
   inner_join(locations, by = c("num" = "location_id")) %>% 
   mutate(par = str_to_title(par))
 
 
 p <- plot_dat %>% 
-  filter(par == "Beta", country != "United States") %>% 
+  filter(par == "Beta") %>% 
   mutate(location = fct_reorder(location, estimate)) %>% 
   ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
              text = str_c("Location: ", location, "<br>",
@@ -245,34 +233,6 @@ p <- plot_dat %>%
 ggplotly(p, tooltip = "text")
 ```
 
-```{r beta_WORLD, eval = F}
-plot_dat <- results %>% 
-  ungroup %>% 
-  filter(par %in% c("beta_tilde")) %>% 
-  mutate(par = str_replace(par, "phi_inv", "phi")) %>% 
-  inner_join(locations, by = c("num" = "location_id")) %>% 
-  mutate(par = str_to_title(par))
-
-
-p <- plot_dat %>% 
-  filter(par == "Beta_tilde", country != "United States") %>% 
-  mutate(location = fct_reorder(location, estimate)) %>% 
-  ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
-             text = str_c("Location: ", location, "<br>",
-                          "Median: ", round(estimate, 4), "<br>",
-                          "Lower: ", round(conf.low, 4), "<br>",
-                          "Upper: ", round(conf.high, 4)))) +
-  geom_linerange(col = "grey50") +
-  geom_point(col = "grey50") +
-  coord_flip() +
-  scale_y_log10() +
-  labs(title = "Beta: Location-Specific Estimates",
-       y = "Posterior median and 95% PI") +
-  theme(axis.title.y = element_blank())
-
-ggplotly(p, tooltip = "text")
-```
-
 ## Nu
 
 ```{r nu_WORLD}
@@ -285,7 +245,7 @@ plot_dat <- results %>%
 
 
 p <- plot_dat %>% 
-  filter(par == "Nu", country != "United States") %>% 
+  filter(par == "Nu") %>% 
   mutate(location = fct_reorder(location, estimate)) %>% 
   ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
              text = str_c("Location: ", location, "<br>",
@@ -304,36 +264,9 @@ p <- plot_dat %>%
 ggplotly(p, tooltip = "text")
 ```
 
-```{r nu_Z, eval = F, include = F}
-p <- spread_draws(m, log_nu[id], mu_nu, sigma_nu) %>%
-  mutate(z = (log_nu - mu_nu) / sigma_nu) %>% 
-  select(id, z) %>% 
-  inner_join(locations, by = c("id" = "location_id")) %>% 
-  group_by(location) %>% 
-  summarise(estimate = median(z),
-            conf.low = quantile(z, 0.025), 
-            conf.high = quantile(z, 0.975)) %>% 
-  ungroup %>% 
-  mutate(location = fct_reorder(location, estimate)) %>% 
-  ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
-             text = str_c("Location: ", location, "<br>",
-                          "Median: ", round(estimate, 4), "<br>",
-                          "Lower: ", round(conf.low, 4), "<br>",
-                          "Upper: ", round(conf.high, 4)))) +
-  geom_hline(yintercept = 0, lty = 2, alpha = 0.4) +
-  geom_linerange(col = "grey50") +
-  geom_point(col = "grey50") +
-  coord_flip() +
-  labs(title = "Nu: Location-Specific Estimates",
-       y = "Posterior median and 95% PI") +
-  theme(axis.title.y = element_blank())
-
-ggplotly(p, tooltip = "text")
-```
-
 ### Inflection Point
 
-```{r}
+```{r inflections_WORLD}
 p <- spread_draws(m, nu[id]) %>% 
   mutate(inflection = 1 - 1 / (1 + nu)^(1/nu)) %>% 
   group_by(id) %>% 
@@ -354,49 +287,12 @@ p <- spread_draws(m, nu[id]) %>%
   coord_flip(ylim = c(0 , 1)) +
   scale_y_continuous(breaks = c(exp(-1), 0.5, 0.8, 0.1),
                      labels = c("exp(-1)", "0.5", "0.8", "0.1")) +
-  # ggtitle(latex2exp::TeX("$\\tilde{\\beta}  = \\nu \\cdot \\beta$: Location-Specific Estimates")) +
   ggtitle("Inflection point: Location-Specific Estimates") +
   labs(y = "Posterior median and 95% PI") +
   theme(axis.title.y = element_blank())
 
 ggplotly(p, tooltip = "text")
 ```
-
-```{r, eval = F}
-spread_draws(m, nu[id]) %>% 
-  mutate(inflection = 1 - 1 / (1 + nu)^(1/nu)) %>% 
-  group_by(id) %>% 
-  summarise(estimate = median(inflection),
-            conf.low = quantile(inflection, .025),
-            conf.high = quantile(inflection, .975)) %>% 
-  ungroup %>% 
-  inner_join(locations, by = c("id" = "location_id")) %>% 
-  filter(location %in% c("Sudan", "Ukraine", "Algeria", "Azerbaijan", "Armenia",
-                         "Argentina", "Bangladesh", "Bahrain", "Afghanistan",
-                         "Bolivia", "Brazil", "Sweden", "Belarus", "United Arab Emirates",
-                         "Switzerland", "Austria", "Belgium", "Turkey", 
-                         "Spain", "United Kingdom")) %>% 
-  mutate(location = fct_reorder(location, estimate)) %>% 
-  ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
-             text = str_c("Location: ", location, "<br>",
-                          "Median: ", round(estimate, 4), "<br>",
-                          "Lower: ", round(conf.low, 4), "<br>",
-                          "Upper: ", round(conf.high, 4)))) +
-  geom_hline(yintercept = exp(-1), lty = 2, alpha = 0.7) +
-  geom_linerange() +
-  geom_point() +
-  coord_flip(ylim = c(0 , 1)) +
-  scale_y_continuous(breaks = c(exp(-1), 0.5, 0.8, 0.1),
-                     labels = c("exp(-1)", "0.5", "0.8", "0.1")) +
-  # ggtitle(latex2exp::TeX("$\\tilde{\\beta}  = \\nu \\cdot \\beta$: Location-Specific Estimates")) +
-  ggtitle("Inflection point: Location-Specific Estimates") +
-  labs(y = "Posterior median and 95% PI") +
-  theme(axis.title.y = element_blank()) +
-  ggsave(str_c(params$date, "/Figures/inflection_points.png"),
-         width = 6, height = 0.4 * 6, scale = 2)
-```
-
-
 
 ## S
 
@@ -425,59 +321,6 @@ p <- plot_dat %>%
 ggplotly(p, tooltip = "text")
 ```
 
-```{r}
-plot_dat %>% 
-  mutate(location = fct_reorder(location, estimate)) %>% 
-  ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high, 
-             text = str_c("Location: ", location, "<br>",
-                          "Median: ", round(estimate, 4), "<br>",
-                          "Lower: ", round(conf.low, 4), "<br>",
-                          "Upper: ", round(conf.high, 4)))) +
-  geom_linerange(col = "grey50") +
-  geom_point(col = "grey50") +
-  coord_flip() +
-  scale_y_log10(labels = label_percent()) +
-  labs(title = "S: Location-Specific Estimates",
-       subtitle = "Posterior median and 95% PI") +
-  theme(axis.title = element_blank()) +
-  ggsave(str_c(params$date, "/Figures/S.png"),
-         width = 6, height = 0.625 * 6, scale = 2.5)
-```
-
-```{r}
-results %>% 
-  ungroup %>% 
-  filter(par %in% c("S")) %>% 
-  mutate(par = str_replace(par, "phi_inv", "phi")) %>% 
-  inner_join(d %>% 
-               group_by(location, population, location_id) %>% 
-               summarise(cases = max(total_cases)),
-             by = c("num" = "location_id")) %>% 
-  mutate(estimate = estimate * population,
-         conf.low = conf.low * population,
-         conf.high = conf.high * population,
-         location = fct_reorder(location, estimate)) %>% 
-  ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
-             text = str_c("Location: ", location, "<br>",
-                          "Median: ", round(estimate, 0), "<br>",
-                          "Lower: ", round(conf.low, 0), "<br>",
-                          "Upper: ", round(conf.high, 0)))) +
-  geom_linerange(col = "grey60") +
-  geom_point(col = "grey60") +
-  geom_point(aes(x = location, y = cases,
-                 text = str_c("Location: ", location, "<br>",
-                              "Cases: ", cases)
-  ), col = "black", inherit.aes = F) +
-  coord_flip() +
-  scale_y_log10(breaks = c(1e3, 1e4, 1e5, 1e6, 1e7),
-                labels = label_comma()) +
-  theme(axis.title = element_blank()) +
-  labs(title = "Final number of cases: Location-Specific Estimates",
-       subtitle = "Posterior median and 95% PI") +
-  ggsave(str_c(params$date, "/Figures/max_cases.png"),
-         width = 6, height = 0.625 * 6, scale = 2.5)
-```
-
 ## Phi
 
 ```{r phi_WORLD}
@@ -490,7 +333,7 @@ plot_dat <- results %>%
 
 
 p <- plot_dat %>% 
-  filter(par == "Phi", country != "United States") %>% 
+  filter(par == "Phi") %>% 
   mutate(location = fct_reorder(location, estimate)) %>% 
   ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high, 
              text = str_c("Location: ", location, "<br>",
@@ -551,7 +394,6 @@ p <- results %>%
   filter(par %in% c("S")) %>% 
   mutate(par = str_replace(par, "phi_inv", "phi")) %>% 
   inner_join(d %>% 
-               filter(country != "United States") %>% 
                group_by(location, population, location_id) %>% 
                summarise(cases = max(total_cases)),
              by = c("num" = "location_id")) %>% 
@@ -577,41 +419,6 @@ p <- results %>%
   theme(axis.title.y = element_blank())
 
 ggplotly(p, tooltip = "text")
-```
-
-
-```{r asymptote_WORLD_save, fig.width = 10, fig.asp = 0.4, eval = F}
-results %>% 
-  ungroup %>% 
-  filter(par %in% c("S")) %>% 
-  mutate(par = str_replace(par, "phi_inv", "phi")) %>% 
-  inner_join(d %>% 
-               group_by(location, population, location_id) %>% 
-               summarise(cases = max(total_cases)),
-             by = c("num" = "location_id")) %>% 
-  mutate(estimate = estimate * population,
-         conf.low = conf.low * population,
-         conf.high = conf.high * population,
-         location = fct_reorder(location, estimate)) %>% 
-  top_n(30, estimate) %>% 
-  ggplot(aes(location, estimate, ymin = conf.low, ymax = conf.high,
-             text = str_c("Location: ", location, "<br>",
-                          "Median: ", round(estimate, 0), "<br>",
-                          "Lower: ", round(conf.low, 0), "<br>",
-                          "Upper: ", round(conf.high, 0)))) +
-  geom_linerange(col = "grey60") +
-  geom_point(col = "grey60") +
-  geom_point(aes(x = location, y = cases,
-                 text = str_c("Location: ", location, "<br>",
-                              "Cases: ", cases)
-  ), col = "black", inherit.aes = F) +
-  coord_flip() +
-  scale_y_log10(limits = c(1e4, NA), 
-                breaks = c(1e4, 1e5, 1e6, 1e7),
-                labels = label_comma()) +
-  theme(axis.title = element_blank()) +
-  ggsave(str_c(params$date, "/Figures/asymptote_world.png"),
-         width = 6, height = 0.4 * 6, scale = 2)
 ```
 
 
@@ -647,50 +454,7 @@ p <- spread_draws(m, alpha[id], beta[id], nu[id], S[id]) %>%
 ggplotly(p, tooltip = "text")
 ```
 
-```{r, fig.asp=0.4, eval = FALSE}
-spread_draws(m, alpha[id], beta[id], nu[id], S[id]) %>% 
-  mutate(days = alpha + log((0.1)^(-nu) - 1) / beta - log(nu)) %>% 
-  arrange(id, days) %>% 
-  group_by(id) %>% 
-  mutate(q = row_number() / n()) %>% 
-  ungroup %>% 
-  inner_join(locations, by = c("id" = "location_id")) %>% 
-  filter(location %in% c("Brazil",  "Indonesia", "Colombia", "Russia", "Mexico"), 
-         is.finite(days)) %>% 
-  mutate(end_date = start_date + days) %>% 
-  filter(end_date <= ymd("2022-01-01")) %>% 
-  group_by(location) %>% 
-  mutate(lab_x = end_date,
-         lab_x = ifelse(end_date == max(end_date), end_date, NA_POSIXct_) %>% as_date,
-         lab_y = ifelse(is.na(lab_x), NA_real_, q),
-         lab_x = case_when(location == "Colombia" ~ lab_x + 24,
-                           location == "Indonesia" ~ lab_x + 24,
-                           location == "Brazil" ~ lab_x + 16,
-                           TRUE ~ lab_x + 18.5),
-         lab_y = case_when(location == "Indonesia" ~ lab_y - 0.017,
-                           location == "Brazil" ~ lab_y + 0.006, 
-                           location == "Colombia" ~ lab_y - 0.008,
-                           location == "Russia" ~ lab_y + 0.018,
-                           TRUE ~ lab_y),
-         label = location) %>% 
-  ggplot(aes(end_date, q, group = location, col = location)) +
-  geom_line() +
-  geom_text(aes(x = lab_x, y = lab_y, label = label)) +
-  scale_x_date(breaks = ymd(c("2020-07-01",
-                              "2021-01-01", "2021-07-01", 
-                              "2022-01-01", "2023-01-01", "2024-01-01")),
-               date_labels = "%B %Y") +
-  scale_y_continuous(labels = label_percent(), expand = expansion(mult = 0.005), limits = c(0, 1.03)) +
-  scale_colour_brewer(type = "qual", palette = "Set1") +
-  coord_cartesian(xlim = ymd(c("2020-07-01", "2022-02-01"))) +
-  # ggtitle("Cumulative probability of first wave ending",
-  #         subtitle = "First wave ended if total cases reach 90% of asymptote") +
-  theme(axis.title = element_blank()) +
-  ggsave(str_c(params$date, "/Figures/first_wave_ending.png"),
-         width = 6, height = 0.4 * 6, scale = 1.6)
-```
-
-## Country-level effects?
+## Country-level predictor effects?
 
 ```{r pop_pars, fig.asp = 1}
 p <- results %>% 
@@ -798,77 +562,6 @@ tidy(m, pars = "corr_mat", conf.int = T, rhat = T, ess = T) %>%
     "$\\ln(\\nu)$" = 1
   ), escape = F) %>% 
   add_header_above(c("", "", "95% PI" = 2, "", ""))
-```
-
-
-```{r, eval = FALSE}
-tidy(m, pars = "corr_mat", conf.int = T, rhat = T, ess = T) %>% 
-  mutate(par1 = str_match(term, "([0-9]),")[, 2] %>% parse_number,
-         par2 = str_match(term, ",([0-9])")[, 2] %>% parse_number) %>% 
-  filter(par1 < par2) %>% 
-  mutate_at(vars(par1, par2), ~ c(
-    "$\\ln(\\alpha)$",
-    "$\\ln(\\beta)$", 
-    "$\\ln(\\nu)$", 
-    "$\\mathrm{logit}(S)$"
-  )[.] %>% as.factor) %>%
-  mutate(text = str_c("cor(", par1, ", ", par2, ")")) %>% 
-  arrange(par1, par2) %>% 
-  select(par2, estimate, conf.low, conf.high, rhat, ess) %>% 
-  set_names(c("Parameter", "Median", "Lower", "Upper", "Rhat", "ESS")) %>%
-  kable(escape = FALSE, format = "latex", booktabs = TRUE, digits = 2,
-        caption = "Caption",
-        align = c("l", rep("c", ncol(.) - 1))) %>% 
-  kable_styling(latex_options = "HOLD_position", full_width = TRUE) %>% 
-  group_rows(index = c(
-    "$\\boldsymbol{\\ln(\\alpha)}$" = 3,
-    "$\\boldsymbol{\\ln(\\beta)}$" = 2,
-    "$\\boldsymbol{\\ln(\\nu)}$" = 1
-  ),latex_align = "l", latex_gap_space = "1", escape = F) %>% 
-  add_header_above(c("", "", "95% PI" = 2, "", "")) -> tab
-```
-
-
-
-```{r latex_table, eval = F, results="asis"}
-results %>% 
-  ungroup %>% 
-  filter(par %in% c("mu_beta", "sigma_beta", 
-                    "mu_alpha", "sigma_alpha", "nu_alpha", 
-                    "mu_S", "kappa_s", "sigma_S", "beta_nu_pop",
-                    "mu_phi_inv","sigma_phi_inv", 
-                    "mu_nu", "sigma_nu")) %>% 
-  mutate(par = str_replace(par, "phi_inv", "phi")) %>% 
-  select(par, everything(), -num, -term, -std.error) %>% 
-  separate(par, c("type", "par"), sep = "_") %>% 
-  select(par, type, everything()) %>% 
-  arrange(par == "phi", par, type) %>% 
-  mutate(par = fct_recode(par,
-                          "$\\ln(\\phi)$" = "phi",
-                          "$\\ln(\\alpha$)" = "alpha",
-                          "$\\ln(\\beta)$" = "beta",
-                          "$\\ln(\\nu)$" = "nu",
-                          "logit$(S)$" = "S"),
-         type = fct_recode(type,
-                           "$\\mu$" = "mu",
-                           "$\\sigma$" = "sigma")) %>% 
-  select(-par) %>% 
-  set_names(c("Parameter", "Median", "Lower", "Upper", "Rhat", "ESS")) %>%
-  kable(digits = 2, 
-        caption = "Caption",
-        escape = F,
-        format = "latex",
-        booktabs = TRUE,
-        align = c("l", rep("c", ncol(.) - 1))) %>% 
-  kable_styling(latex_options = "HOLD_position", full_width = T) %>% 
-  group_rows(index = c(
-    "$\\ln(\\alpha)$" = 2,
-    "$\\ln(\\beta)$" = 2,
-    "$\\ln(\\nu)$" = 2,
-    "$\\text{logit}(S)$" = 2,
-    "$\\ln(\\phi)$" = 2
-  ),latex_align = "l", latex_gap_space = "1", escape = F) %>% 
-  add_header_above(c("", "", "95% PI" = 2, "Convergence" = 2)) -> tab
 ```
 
 ## Do the hierarchical distributions fit the country-level estimates?

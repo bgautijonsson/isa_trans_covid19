@@ -84,14 +84,3 @@ tab <- tab %>%
     mutate(max_time = round(max_time))
 
 tab
-
-tab %>% 
-    select(fit_date, max_time, n_obs, n_loc, rhat, n_div) %>% 
-    set_names(c("Date of fit", "Fit time\\textsuperscript{1}", "Observations", "Countries", 
-                "$\\max(\\hat R)$", "$N_{\\text{div}}\\textsuperscript{2}$")) %>% 
-    kable(digits = 3, format = "latex", booktabs = TRUE,
-          caption = "Convergence diagnostics for fitted Stan models by date", escape = F,
-          align = c("l", rep("c", ncol(.) - 1)), label = "convergence") %>% 
-    kable_styling(latex_options = "HOLD_position") %>% 
-    footnote(number = c("In seconds",
-                        "Number of divergent transitions"))

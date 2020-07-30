@@ -76,7 +76,7 @@ make_predictions(
     ymd(c("2020-04-01", "2020-05-01", "2020-06-01"))
 ) +
     coord_cartesian(xlim = c(NA_Date_, ymd("2020-07-21"))) +
-    ggsave(here("Past Models", "Results", "Figures", "well_fit_preds.png"),
+    ggsave(here("Past Models", "Results", "Figures", "euro_preds.png"),
            width = 6, height = 0.621 * 6, scale = 2)
 
 
@@ -91,35 +91,5 @@ make_predictions(
     ),
     ymd(c("2020-05-01", "2020-06-01", "2020-07-01"))
 ) +
-    # labs(title = "Predictions for diagnosed new cases",
-    #      subtitle = "Shown by country and date of model fit") +
-    ggsave(here("Past Models", "Results", "Figures", "misfit_preds.png"),
+    ggsave(here("Past Models", "Results", "Figures", "global_preds.png"),
            width = 6, height = 0.621 * 6, scale = 2)
-
-make_predictions(
-    c(
-        "Oman",
-        "Bolivia",
-        "Honduras",
-        "Mexico"
-    ),
-    fitted_dates[c(5, 6, 7, 8)]
-)
-
-
-make_predictions(
-    c("Saudi Arabia", "United Arab Emirates"),
-    fitted_dates[c(1, 3, 5, 7)]
-)
-
-make_predictions(
-    c("Spain"),
-    ymd("2020-07-25")
-)
-
-
-make_predictions(
-    c("Iceland"),
-    ymd(c("2020-03-20", "2020-03-25", "2020-04-01", "2020-04-15"))
-) +
-    labs(title = "Spár fyrir Ísland")

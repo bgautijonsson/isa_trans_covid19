@@ -2,7 +2,7 @@ data {
   int<lower = 0> N_obs;
   // location[N_obs] takes on value i for location number i etc.
   int location[N_obs];
-  // days is how many days since case rate per 1000 exceeded a limit we have chosen
+  // days is how many days since prevalence exceeded a limit we have chosen
   vector[N_obs] days;
   // We model the daily number of newly diagnosed cases instead of cumulative numbers
   int new_cases[N_obs];
@@ -13,7 +13,6 @@ data {
 
 transformed data {
   vector[N_obs] log_population = log(population[location]);
-  vector[N_locations] log_population_cent = log(population) - mean(log(population));
   vector[4] mu_priors;
   mu_priors[1] = 3.0;
   mu_priors[2] = -2.0;
@@ -59,6 +58,8 @@ model {
   vector[N_obs] linear = beta[location] .* (days - alpha[location]);
   vector[N_obs] extra = (inv(nu[location]) + 1) .* log(1 + exp(log_nu[location] + linear));
   vector[N_obs] log_dfdt = log_beta[location] + log_S[location] + linear - extra;
+  
+  // Calculate covariance matrix for GLGM parameters
   matrix[4, 4] cov_mat = diag_pre_multiply(sigma_pars, L_Omega);
   
   // Multivariate Normal prior for the GLGM parameters
@@ -68,7 +69,7 @@ model {
   
   for (i in 1:N_locations) pre_pars[, i] ~ multi_normal_cholesky(mu_pars, cov_mat);
   
-  // Non-Centered prior for the overdispersion
+  // Centered log-normal prior for the overdispersion
   mu_phi_inv ~ normal(-1, 1);
   sigma_phi_inv ~ exponential(1);
   log_phi_inv ~ normal(mu_phi_inv, sigma_phi_inv);
@@ -87,13 +88,4 @@ generated quantities {
   real mu_beta = mu_pars[2];
   real mu_nu = mu_pars[3];
   real mu_S = mu_pars[4];
-  // Logistic equation calculations
-  // vector[N_obs] linear = beta[location] .* (days - alpha[location]);
-  // vector[N_obs] extra = (exp(-log_nu[location]) + 1) .* log(1 + exp(log_nu[location] + linear));
-  // vector[N_obs] log_dfdt = log_beta[location] + log_S[location] + linear - extra;
-  // vector[N_locations] log_beta_tilde = log_beta - log_nu;
-  // vector<lower = 0>[N_locations] beta_tilde = exp(log_beta_tilde);
-  // real log_lik[N_obs];
-  // int sim_cases[N_obs]= neg_binomial_2_rng(dfdt .* population[location], phi[location]);
-  // for (i in 1:N_obs) log_lik[i] = neg_binomial_2_log_lpmf(new_cases[i] | log_dfdt[i] + log_population[i], phi[location[i]]);
 }
